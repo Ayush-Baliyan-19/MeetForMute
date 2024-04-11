@@ -30,7 +30,6 @@ export const SocketProvider = ({ children }) => {
         };
 
         if (socket) {
-            console.log(socket)
             socket.on("connect_error", handleConnectError);
         }
 

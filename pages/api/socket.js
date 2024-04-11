@@ -1,25 +1,37 @@
-import { Server} from 'socket.io';
-
+import { Server } from "socket.io";
 
 const SocketHandler = (req, res) => {
-  console.log("Socket handler called");
-  const httpServer= res.socket.server;
-
-  if (httpServer.io) {
-    console.log("Socket.io server already running...");
+  console.log("called api")
+  if (res.socket.server.io) {
+    console.log("socket already running")
   } else {
-    const io = new Server(httpServer);
-    httpServer.io = io;
+    const io = new Server(res.socket.server)
+    res.socket.server.io = io
 
-    io.on("connection", (socket) => {
-      console.log("A user connected");
+    io.on('connection', (socket) => {
 
-      socket.on("disconnect", () => {
-        console.log("A user disconnected");
-      });
-    });
+      socket.on('join-room', (roomId, userId) => {
+        socket.join(roomId)
+        socket.broadcast.to(roomId).emit('user-connected', userId)
+      })
+
+      socket.on('user-toggle-audio', (userId, roomId) => {
+        socket.join(roomId)
+        socket.broadcast.to(roomId).emit('user-toggle-audio', userId)
+      })
+
+      socket.on('user-toggle-video', (userId, roomId) => {
+        socket.join(roomId)
+        socket.broadcast.to(roomId).emit('user-toggle-video', userId)
+      })
+
+      socket.on('user-leave', (userId, roomId) => {
+        socket.join(roomId)
+        socket.broadcast.to(roomId).emit('user-leave', userId)
+      })
+    })
   }
   res.end();
 }
 
-export default SocketHandler;
+export default SocketHandler
