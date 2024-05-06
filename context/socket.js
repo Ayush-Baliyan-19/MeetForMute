@@ -23,15 +23,24 @@ export const SocketProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        const handleConnectError =  async (err) => {
+        const handleConnectError = async (err) => {
             console.log("Connection Error:", err);
             // Handle the error or attempt reconnection here
             await fetch("/api/socket");
         };
-
+        
+        const handlePrediction = (predictionData) => {
+            console.log("Received prediction:", predictionData);
+            // Update UI or take action based on predictionData
+        };
+        
         if (socket) {
             socket.on("connect_error", handleConnectError);
+            socket.on("prediction", handlePrediction);
+
         }
+
+
 
         return () => {
             if (socket) {

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@teachablemachine/image": "^0.8.5",
     "classnames": "^2.5.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.367.0",

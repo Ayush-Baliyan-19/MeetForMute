@@ -6,7 +6,7 @@ const Player = (props) => {
         <div className="player-wrapper">
             <ReactPlayer
                 url={url}
-                controls
+                controls={false}
                 width="100%"
                 height="100%"
                 className="react-player"

@@ -29,6 +29,12 @@ const SocketHandler = (req, res) => {
         socket.join(roomId)
         socket.broadcast.to(roomId).emit('user-leave', userId)
       })
+
+      socket.on('prediction', (predictionData, roomId) => {
+        socket.join(roomId);
+        socket.broadcast.to(roomId).emit('prediction', predictionData);
+      });
+
     })
   }
   res.end();
