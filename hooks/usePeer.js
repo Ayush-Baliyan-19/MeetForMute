@@ -1,7 +1,9 @@
 const { useEffect, useState, useRef } = require("react");
 import { useSocket } from "@/context/socket";
 import { usePathname } from "next/navigation";
-import Peer from "peerjs";
+import dynamic from "next/dynamic";
+const Peer = dynamic(() => import("peerjs"), { ssr: false });
+
 const usePeer = () => {
     const {socket,userName}= useSocket();
     const pathName=usePathname()
