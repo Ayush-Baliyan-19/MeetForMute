@@ -11,6 +11,7 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
+    const [userName, setUserName] = useState('');
 
     useEffect(() => {
         const newSocket = io();
@@ -28,19 +29,11 @@ export const SocketProvider = ({ children }) => {
             // Handle the error or attempt reconnection here
             await fetch("/api/socket");
         };
-        
-        const handlePrediction = (predictionData) => {
-            console.log("Received prediction:", predictionData);
-            // Update UI or take action based on predictionData
-        };
+
         
         if (socket) {
             socket.on("connect_error", handleConnectError);
-            socket.on("prediction", handlePrediction);
-
         }
-
-
 
         return () => {
             if (socket) {
@@ -50,7 +43,7 @@ export const SocketProvider = ({ children }) => {
     }, [socket]);
 
     return (
-        <SocketContext.Provider value={socket}>
+        <SocketContext.Provider value={{socket,userName,setUserName}}>
             {children}
         </SocketContext.Provider>
     );

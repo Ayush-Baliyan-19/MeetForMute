@@ -1,15 +1,8 @@
-.activePlayerContainer {
-  @apply absolute w-9/12 left-0 right-0 mx-auto;
-  top: 20px;
-  bottom: 50px;
-  height: calc(100vh - 20px - 100px);
-}
-
 .inActivePlayerContainer {
-  @apply absolute flex flex-col overflow-y-auto;
-  width: 200px;
-  height: calc(100vh - 20px);
+  @apply absolute flex flex-col overflow-visible;
+  /* width: 200px; */
+  height: 20vh;
+  aspect-ratio: 16/9;
   right: 20px;
   top: 20px;
 }
-

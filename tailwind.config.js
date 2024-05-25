@@ -15,7 +15,9 @@ module.exports = {
       colors: {
         prime: '#212529',
         secondary: '#343a40',
-        buttonPrimary: '#d90429'
+        buttonPrimary: '#d90429',
+        white: '#fefefe',
+        black: '#212125',
       },
       fontFamily: {
         poppins : ['Poppins' ,'sans-serif'],

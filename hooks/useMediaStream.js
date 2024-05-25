@@ -14,6 +14,14 @@ const useMediaStream = () => {
                 console.error(error);
             }
         })();
+        return () => {
+            if (stream) {
+                console.log("Getting a stream")
+                stream.getTracks().forEach((track) => {
+                    track.stop();
+                });
+            }
+        };
     }, []);
     return { stream };
 };

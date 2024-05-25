@@ -5,7 +5,7 @@ import styles from "@/components/CopySection/index.module.css";
 import { usePathname } from "next/navigation";
 const CopySection = (props) => {
   // const { roomId } = props;
-  const roomId = usePathname().split('/')[1]
+  const roomId = usePathname()?.split('/')[1]
   return (
     <div className={styles.copyContainer}>
       <div className={styles.copyHeading}>Copy Room ID:</div>

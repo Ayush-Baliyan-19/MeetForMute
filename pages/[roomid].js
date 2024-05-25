@@ -15,8 +15,9 @@ import { useRouter } from "next/router";
 
 import * as tmImage from "@teachablemachine/image";
 
+import Draggable, { DraggableCore } from 'react-draggable';
 const Room = () => {
-  const socket = useSocket();
+  const { socket } = useSocket();
   const { roomId } = useRouter().query;
   const { peer, myId } = usePeer();
   const { stream } = useMediaStream();
@@ -32,49 +33,52 @@ const Room = () => {
 
   const [users, setUsers] = useState([]);
   const [prediction, setPrediction] = useState(null); // State to store prediction data
+  const [isPrediction, setIsPrediction] = useState(true); // State to control prediction feature
 
   // Teachable Machine model variables
   let model, webcam, labelContainer, maxPredictions;
 
   maxPredictions = 2; // Replace with model's class count
   useEffect(() => {
-    // Model URL and other variables
-    const URL = "https://teachablemachine.withgoogle.com/models/2UnELG3RZ/"; // Replace with your model URL obtained from Teachable Machine
+    if (isPrediction && myId.length > 0) {
+      // Model URL and other variables
+      const URL = "https://teachablemachine.withgoogle.com/models/2UnELG3RZ/"; // Replace with your model URL obtained from Teachable Machine
 
-    async function initModel() {
-      const modelURL = URL + "model.json";
-      const metadataURL = URL + "metadata.json";
+      async function initModel() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
 
-      model = await tmImage.load(modelURL, metadataURL);
-      webcam = new tmImage.Webcam(200, 200, true); // Width, height, flip
+        model = await tmImage.load(modelURL, metadataURL);
+        webcam = new tmImage.Webcam(200, 200, true); // Width, height, flip
 
-      await webcam.setup();
-      await webcam.play();
-      window.requestAnimationFrame(loop);
-
-      labelContainer = document.getElementById("label-container");
-      for (let i = 0; i < maxPredictions; i++) {
-        labelContainer.appendChild(document.createElement("div"));
+        await webcam.setup();
+        await webcam.play();
+        setInterval(() => {
+          loop();
+        }, 1000);
       }
+
+      if (!socket || !peer || !stream) return;
+      initModel();
+
+      return () => {
+        if (webcam && webcam.active)
+          webcam.stop(); // Cleanup function to stop webcam when unmounting
+      };
     }
-
-    if (!socket || !peer || !stream) return;
-    initModel();
-
-    return () => {
-      webcam.stop(); // Cleanup function to stop webcam when unmounting
-    };
-  }, [peer, setPlayers, socket, stream]);
+  }, [myId, isPrediction, peer, setPlayers, socket, stream]);
 
   // Update webcam and predict within a loop
   async function loop() {
     webcam.update();
-    await predict();
-    window.requestAnimationFrame(loop);
+    await predict(myId);
   }
 
   // Make predictions and update UI (within predict)
-  async function predict() {
+  async function predict(myId) {
+    if (!webcam || myId.length <= 0) {
+      return
+    };
     const prediction = await model.predict(webcam.canvas);
 
     // Access the predicted class with the highest probability
@@ -84,19 +88,14 @@ const Room = () => {
     );
 
     // Update UI based on prediction (e.g., highlight user or trigger actions)
-    console.log("Predicted class:", highestPrediction.className, highestPrediction.probability);
-
-    // Set the prediction state
-    setPrediction(highestPrediction);
+    // console.log("Predicted class:", highestPrediction.className, highestPrediction.probability);
 
     // Emit prediction over the socket
-    socket.emit("prediction", highestPrediction.className);
-
-    labelContainer.textContent = `Predicted Class: ${highestPrediction.className} (Probability: ${highestPrediction.probability.toFixed(2)})`;
+    socket.emit("prediction", [myId, highestPrediction.className]);
   }
 
   useEffect(() => {
-    if (!socket || !peer || !stream) return;
+    if (!socket || !peer || !stream || myId.length <= 0) return;
     const handleUserConnected = (newUser) => {
       console.log(`user connected in room with userId ${newUser}`);
 
@@ -124,10 +123,10 @@ const Room = () => {
     return () => {
       socket.off("user-connected", handleUserConnected);
     };
-  }, [peer, setPlayers, socket, stream]);
+  }, [myId, peer, setPlayers, socket, stream]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || myId.length <= 0) return;
     const handleToggleAudio = (userId) => {
       console.log(`user with id ${userId} toggled audio`);
       setPlayers((prev) => {
@@ -161,10 +160,10 @@ const Room = () => {
       socket.off("user-toggle-video", handleToggleVideo);
       socket.off("user-leave", handleUserLeave);
     };
-  }, [players, setPlayers, socket, users]);
+  }, [myId, players, setPlayers, socket, users]);
 
   useEffect(() => {
-    if (!peer || !stream) return;
+    if (!peer || !stream || myId.length <= 0) return;
     peer.on("call", (call) => {
       const { peer: callerId } = call;
       call.answer(stream);
@@ -186,10 +185,10 @@ const Room = () => {
         }))
       });
     });
-  }, [peer, setPlayers, stream]);
+  }, [myId, peer, setPlayers, stream]);
 
   useEffect(() => {
-    if (!stream || !myId) return;
+    if (!stream || myId.length <= 0) return;
     console.log(`setting my stream ${myId}`);
     setPlayers((prev) => ({
       ...prev,
@@ -202,13 +201,35 @@ const Room = () => {
   }, [myId, setPlayers, stream]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || myId.length <= 0) {
+      return
+    };
 
+    localStorage.setItem("IsWebcamOn", "yes");
     // Handle incoming prediction data
     const handlePrediction = (predictionData) => {
-      console.log("Received prediction:", predictionData);
       // Update prediction state
-      setPrediction(predictionData);
+      if (predictionData[0].length > 0)
+        setPlayers((prev) => ({
+          ...prev,
+          [predictionData[0]]: {
+            url: stream,
+            muted: true,
+            playing: true,
+            prediction: predictionData[1],
+          },
+        }));
+    };
+    const handlePredictionOff = () => {
+      setPlayers((prev) => ({
+        ...prev,
+        [myId]: {
+          url: stream,
+          muted: true,
+          playing: true,
+          prediction: null,
+        },
+      }));
     };
 
     // Listen for prediction events
@@ -216,32 +237,43 @@ const Room = () => {
 
     // Clean up function
     return () => {
-      socket.off("prediction", handlePrediction);
+      socket.off("prediction", handlePredictionOff);
     };
-  }, [socket]);
+  }, [myId, nonHighlightedPlayers, setPlayers, socket, stream]);
+
+  // Function to toggle prediction feature
+  const toggleModel = () => {
+    setIsPrediction(!isPrediction);
+  };
 
   // Rest of the existing Room component code... (socket handling, user management, etc.)
 
   return (
-    <>
-      <div className={styles.activePlayerContainer}>
+    <div className=" bg-black h-screen w-screen">
+      <div className={"w-full h-screen"}>
         {playerHighlighted && (
-          <div className={styles.videoContainer+ "relative"}>
+          <div className={"relative flex justify-center h-screen"}>
             <Player
               url={playerHighlighted.url}
               muted={playerHighlighted.muted}
               playing={playerHighlighted.playing}
               isActive
+              userName={myId}
             />
             {/* Overlay box */}
-            <div className={styles.overlayBox + "overlayBox"}>
-              <div className={styles.overlayText + "overlayText"}>
-                {/* Render prediction text dynamically */}
-                {prediction && (
+            <div className={"overlayBox absolute bottom-60"}>
+              <div className={"overlayText"}>
+                {Object.keys(nonHighlightedPlayers)?.length > 0 && (
                   <>
-                    Predicted Class: {prediction.className}
+                    {Object.keys(nonHighlightedPlayers).map((item, index) => {
+                      return (
+                        <>
+                          {nonHighlightedPlayers[item].prediction && (
+                              <div key={index}>{`${item} : ${nonHighlightedPlayers[item].prediction}`}</div>)}
+                        </>
+                      )
+                    })}
                     <br />
-                    Probability: {(prediction.probability * 100).toFixed(2)}%
                   </>
                 )}
               </div>
@@ -253,7 +285,12 @@ const Room = () => {
         {Object.keys(nonHighlightedPlayers).map((playerId) => {
           const { url, muted, playing } = nonHighlightedPlayers[playerId];
           return (
-            <Player key={playerId} url={url} muted={muted} playing={playing} isActive={false} />
+            <Draggable key={playerId}
+              handle=".handle" >
+              <div className="handle cursor-move">
+                <Player key={playerId} url={url} muted={muted} playing={playing} isActive={false} userName={playerId} />
+              </div>
+            </Draggable>
           );
         })}
       </div>
@@ -263,11 +300,13 @@ const Room = () => {
         playing={playerHighlighted?.playing}
         toggleAudio={toggleAudio}
         toggleVideo={toggleVideo}
+        toggleModel={toggleModel}
         leaveRoom={leaveRoom}
+        isPrediction={isPrediction}
       />
       <div id="webcam-container"></div>
       <div id="label-container"></div>
-    </>
+    </div>
   );
 };
 
