@@ -8,7 +8,7 @@ const useMediaStream = () => {
         isStream.current = true;
         (async function initStream() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const stream = await window.navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 setStream(stream);
             } catch (error) {
                 console.error(error);
@@ -22,7 +22,7 @@ const useMediaStream = () => {
                 });
             }
         };
-    }, []);
+    }, [stream]);
     return { stream };
 };
 
