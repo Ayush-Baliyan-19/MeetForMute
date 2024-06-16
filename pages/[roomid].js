@@ -97,6 +97,7 @@ const Room = () => {
   useEffect(() => {
     if (!socket || !peer || !stream || myId.length <= 0) return;
     const handleUserConnected = (newUser) => {
+      console.log("Handling user connected")
       console.log(`user connected in room with userId ${newUser}`);
 
       const call = peer.call(newUser, stream);
@@ -170,14 +171,14 @@ const Room = () => {
 
       call.on("stream", (incomingStream) => {
         console.log(`incoming stream from ${callerId}`);
-        setPlayers((prev) => ({
-          ...prev,
-          [callerId]: {
-            url: incomingStream,
-            muted: true,
-            playing: true,
-          },
-        }));
+        // setPlayers((prev) => ({
+        //   ...prev,
+        //   [callerId]: {
+        //     url: incomingStream,
+        //     muted: true,
+        //     playing: true,
+        //   },
+        // }));
 
         setUsers((prev) => ({
           ...prev,

@@ -9,7 +9,6 @@ import { MdMeetingRoom } from "react-icons/md";
 import { ImMakeGroup } from "react-icons/im";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-
 const poppins = Poppins({
   subsets: ['latin'],
   display: 'swap',
@@ -56,7 +55,7 @@ export default function Home() {
           <div className="flex justify-center items-center h-full w-full flex-col">
             <div className="heading flex justify-center items-center gap-5 my-10">
               <ImMakeGroup className="text-6xl text-black" />
-              <h1 className="text-4xl font-bold text-black">MeetforMute</h1>
+              <h1 className="text-4xl font-bold text-black">SilentSpeak</h1>
             </div>
             <div className="inputsAndButtons flex flex-col justify-center items-center gap-5 w-[60%]" >
               <div className="w-full">
